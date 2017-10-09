@@ -8,6 +8,7 @@ To be done:
 2)   Write state change by turn logic
 3)   Make a GUI
 4)   Anticipate default space becoming deviant
+5)   Add tests for new methods
 
 Current Status:
 1)   Can set initial state and store data in a tree
