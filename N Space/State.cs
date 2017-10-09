@@ -1,6 +1,8 @@
-﻿namespace N_Space {
-    public enum State: byte {
-        Dark = 0,
-        Light = 1
+namespace N_Space {
+    public enum State {
+        Default = 0,
+        Red = 1,
+        Green = 2,
+        Blue = 3
     };
 }
