@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
+using System.Linq;
 
 namespace N_Space {
     public class Location {
@@ -30,18 +31,40 @@ namespace N_Space {
 
         private List<int[]> RemoveUndesirableNeighbors(List<int[]> seed, int maxSize) {
             bool shouldRemove;
-            foreach (int[] s in seed) {
-                shouldRemove = s.Equals(_coordinate);
+            List<int> indexToRemove = new List<int>();
+
+            for (int i=0; i < seed.Count; i++) { 
+                shouldRemove = IntArrayConentCompare(seed[i], _coordinate);
                 if (!shouldRemove) {
-                    foreach (int i in s) {
-                        shouldRemove = i < 0 || i > maxSize;
+                    foreach (int j in seed[i]) {
+                        shouldRemove |= j < 0 || j > maxSize;
                     }
                 }
                 if (shouldRemove) {
-                    seed.Remove(s);
+                    indexToRemove.Add(i);
                 }
             }
+
+            for (int i = indexToRemove.Count - 1; i >= 0; i--) {
+                seed.RemoveAt(indexToRemove[i]);
+            }
+
             return seed;
+        }
+
+        private bool IntArrayConentCompare(int[] array1, int[] array2) {
+            bool result = true;
+
+            if (array1.Length == array2.Length) {
+                for (int i = 0; i < array1.Length; i++) {
+                    result &= array1[i] == array2[i];
+                    if (!result) {
+                        i = array1.Length;
+                    }
+                }
+            }
+
+            return result;
         }
 
         private List<int[]> IndexEvaluationTrain(List<int[]> seed, int index) {
@@ -59,11 +82,35 @@ namespace N_Space {
             mutations[1] = 0;
             mutations[2] = 1;
 
-            for (int i = 1; i < currentList.Count; i++) {
+            for (int i = 0; i < currentList.Count; i++) {
                 for (int j = 0; j < mutations.Length; j++) {
                     int[] tempCopy = (int[])currentList[i].Clone();
                     tempCopy[index] = tempCopy[index] + mutations[j];
                     result.Add(tempCopy);
+                }
+            }
+            return result;
+        }
+
+        public string NameNeighbors() {
+            string result = "{";
+            for (int i = 0; i < _neighbors.Count; i++) {
+                string indexes = "[";
+                for (int j = 0; j < _neighbors[i].Length; j++) {
+                    indexes += _neighbors[i][j].ToString();
+                    if (j == _neighbors[i].Length - 1) {
+                        indexes += "]";
+                    }
+                    else {
+                        indexes += ",";
+                    }
+                }
+                result += indexes;
+                if (i == _neighbors.Count - 1) {
+                    result += "}";
+                }
+                else {
+                    result += ",";
                 }
             }
             return result;
