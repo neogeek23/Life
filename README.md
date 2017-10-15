@@ -8,6 +8,7 @@ To be done:
 2)   Make a GUI
 3)   Anticipate default space becoming deviant
 4)   Add tests for new methods
+5)   Check for which is longer state or max size or dim when deciding printing spacing
 
 Current Status:
 1)   Can set initial state and store data in a tree
