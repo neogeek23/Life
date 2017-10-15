@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -79,64 +80,118 @@ namespace N_Space {
         }
 
         public void PrintSpace() {
-            PrintFromDimension(_dimensionCount, _deviantTree);
+            PrintFromDimension(_dimensionCount, _deviantTree, null);
         }
 
-        private string DimensionalAnchor(int n, int index) {
-            int dimensionStringSpace = System.Convert.ToInt32(Math.Log10(System.Convert.ToDouble(n)));
-            int indexStringSpace = System.Convert.ToInt32(Math.Log10(System.Convert.ToDouble(index)));
-            int remainingOpenSpace = (_size - dimensionStringSpace - indexStringSpace) / 2;
-            int oddDivision = (_size - dimensionStringSpace - indexStringSpace) % 2;
-            const string filler = "-";
-            string result = n.ToString();
+        private string DimensionalAnchor(int n, int index, int charactersPerIndex) {
+            string extra = "";
+            if (charactersPerIndex % 2 == 1) {  //if we have an odd number per, we are short a character at the end
+                extra = "-";
+            }
+            return n.ToString().PadRight(charactersPerIndex, '-').PadRight((charactersPerIndex * _size / 2) + (charactersPerIndex/2), '-') +
+                   index.ToString().PadRight((charactersPerIndex * _size / 2) + (charactersPerIndex / 2), '-') + extra;
+        }
 
-            for (int i = 0; i < remainingOpenSpace; i++) {
-                result += filler;
+        private int DetermineCharacterSizeOfNumber(int n) {
+            return n.ToString().Length;
+        }
+
+        private string Make2D_X_Header(int charactersPerIndex) {
+            string result = "";
+            string temp = "";
+            for (int i = 0; i < _size; i++) {
+                result += i.ToString().PadLeft(charactersPerIndex, '-');
             }
 
-            result += index.ToString();
-
-            for (int i = 0; i < remainingOpenSpace + oddDivision; i++) {
-                result += filler;
+            temp = "";
+            for (int i = 0; i < charactersPerIndex; i++) {
+                temp += "-";
             }
+            return temp + result + "\n";
+        }
 
+        private string MakeMultiDimHeader(int charactersPerIndex, List<int> dimIndexHeaderList) {
+            string result = "";
+            for (int i = _dimensionCount; i > _dimensionCount - dimIndexHeaderList.Count; i--) {
+                result += DimensionalAnchor(i, dimIndexHeaderList[Math.Abs(i - _dimensionCount)], charactersPerIndex) + "\n";
+            }
             return result;
         }
 
-        private void Print2DSpace(Dimension deviants) {
-            string result = "";
+        private void Print2DSpace(Dimension deviants, int charactersPerIndex, List<int> dimIndexHeaderList) {
+            string result = MakeMultiDimHeader(charactersPerIndex, dimIndexHeaderList) + Make2D_X_Header(charactersPerIndex);
             for (int i = 0; i < _size; i++) {
+                result += i.ToString().PadLeft(charactersPerIndex - 1, '-') + ":";
                 int? ParentIndex = deviants.GetChildIndexOf(i);
                 if (ParentIndex != null) {
                     for (int j = 0; j < _size; j++) {
                         int? ChildIndex = deviants.GetChild(ParentIndex).GetChildIndexOf(j);
                         if (ChildIndex != null) {
                             result += Convert.ToInt32(deviants.GetChild(ParentIndex).GetChild(ChildIndex).GetLocation()
-                                .GetPresentState()) + " ";
+                                .GetPresentState()).ToString().PadLeft(charactersPerIndex);
                         }
                         else {
-                            result += Convert.ToInt32(_default) + " ";
+                            result += Convert.ToInt32(_default).ToString().PadLeft(charactersPerIndex);
                         }
                     }
                 }
                 else {
                     for (int j = 0; j < _size; j++) {
-                        result += Convert.ToInt32(_default) + " ";
+                        result += Convert.ToInt32(_default).ToString().PadLeft(charactersPerIndex);
                     }
                 }
                 if (i < _size - 1) {
                     result += "\n";
                 }
             }
-            Console.WriteLine(result);
+            Console.WriteLine(result + "\n");
         }
 
-        private void PrintFromDimension(int n, Dimension deviants) {
-            if (n > 2) {
-                PrintFromDimension(n - 1, deviants);
+        private void Print2DSpaceDefaults(int charactersPerIndex, List<int> dimIndexHeaderList) {
+            string result = MakeMultiDimHeader(charactersPerIndex, dimIndexHeaderList) + Make2D_X_Header(charactersPerIndex);
+            for (int i = 0; i < _size; i++) {
+                result += i.ToString().PadLeft(charactersPerIndex - 1, '-') + ":";
+                for (int j = 0; j < _size; j++) {
+                    result += Convert.ToInt32(_default).ToString().PadLeft(charactersPerIndex);
+                }
+
+                if (i < _size - 1) {
+                    result += "\n";
+                }
             }
-            else {
-                Print2DSpace(deviants);
+            Console.WriteLine(result + "\n");
+        }
+
+        private void PrintFromDimension(int n, Dimension deviants, List<int> currentDimIndexList) {
+            int charactersPerIndex = DetermineCharacterSizeOfNumber(_size) + 1;
+            if (deviants != null && n > 2) {
+                for (int i = 0; i < _size; i++) {
+                    if (currentDimIndexList == null) {
+                        currentDimIndexList = new List<int>();
+                    }
+                    currentDimIndexList.Add(i);
+                    int? index = deviants.GetChildIndexOf(i);
+                    if (index != null) {
+                        PrintFromDimension(n - 1, deviants.GetChildList()[Convert.ToInt32(index)], currentDimIndexList);
+                    }
+                    else {
+                        PrintFromDimension(n - 1, null, currentDimIndexList);
+                    }
+                    currentDimIndexList.RemoveAt(currentDimIndexList.Count - 1);
+                }
+            } else if (deviants == null && n > 2) {
+                for (int i = 0; i < _size; i++) {
+                    if (currentDimIndexList == null) {
+                        currentDimIndexList = new List<int>();
+                    }
+                    currentDimIndexList.Add(i);
+                    PrintFromDimension(n - 1, null, currentDimIndexList);
+                    currentDimIndexList.RemoveAt(currentDimIndexList.Count - 1);
+                }
+            } else if (deviants != null && n <= 2) {
+                Print2DSpace(deviants, charactersPerIndex, currentDimIndexList);
+            } else {
+                Print2DSpaceDefaults(charactersPerIndex, currentDimIndexList);
             }
         }
     }
